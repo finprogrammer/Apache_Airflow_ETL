@@ -31,4 +31,4 @@ MONGODB_URL_KEY=mongodb+srv://USER:PASS@cluster.mongodb.net/DB?retryWrites=true&
 ├─ requirements.txt
 └─ README.md
 
-![alt text](image.png)
+![alt text](dag_final-1.png)
