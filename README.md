@@ -1,5 +1,7 @@
 This repo contains a lightweight Airflow 2 pipeline (run locally with Astronomer/Docker) that orchestrates data ingestion → validation → transformation. It streams data from MongoDB to CSV, checks schema and data drift, then preprocesses and saves transformed arrays and a preprocessor object. All outputs are written to timestamped folders under Artifacts/, and small JSON (paths/flags) is passed between tasks via XCom.
 
+![alt text](dag_final-1.png)
+
 ## Prerequisites
 - Docker Desktop (WSL2 on Windows recommended)
 - Astronomer CLI (`astro`)
@@ -30,5 +32,3 @@ MONGODB_URL_KEY=mongodb+srv://USER:PASS@cluster.mongodb.net/DB?retryWrites=true&
 ├─ Dockerfile
 ├─ requirements.txt
 └─ README.md
-
-![alt text](dag_final-1.png)
