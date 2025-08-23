@@ -1,19 +1,10 @@
-"""
-Lightweight Airflow DAG: Data ingestion → validation → transformation
 
-Key design:
-- Keep module import LIGHT to avoid DagBag timeouts.
-- Do heavy imports INSIDE task callables (lazy imports).
-- Pass only JSON-serializable values via XCom (no global dict).
-- Use Airflow 2+ API: `schedule=` (not `schedule_interval`), and `catchup=False` on DAG.
-"""
 
 from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 
 
-# Task defaults (only lightweight defaults here)
 default_args = {
     "owner": "evolonics",
     "retries": 1,
@@ -32,14 +23,7 @@ with DAG(
 ) as dag:
 
     def run_data_ingestion(**kwargs) -> dict:
-        """
-        Return (via XCom) only JSON-serializable paths:
-        {
-          "train_csv": ".../train.csv",
-          "test_csv":  ".../test.csv"
-        }
-        """
-        # Lazy imports to keep parse fast
+
         from networksecurity.entity.config_entity import TrainingPipelineConfig, DataIngestionConfig
         from networksecurity.components.data_ingestion import DataIngestion
 
@@ -55,10 +39,6 @@ with DAG(
         }
 
     def run_data_validation(ti, **kwargs) -> dict:
-        """
-        Pull ingestion XCom → run validation → push validated paths & drift report.
-        """
-        # Lazy imports
         from networksecurity.entity.config_entity import TrainingPipelineConfig, DataValidationConfig
         from networksecurity.entity.artifact_entity import DataIngestionArtifact
         from networksecurity.components.data_validation import DataValidation
@@ -75,7 +55,6 @@ with DAG(
 
         dv_art = validator.initiate_data_validation()
 
-        # You can use dv_art.validation_status to conditionally fail here if desired
         return {
             "valid_train_csv": dv_art.valid_train_file_path,
             "valid_test_csv": dv_art.valid_test_file_path,
@@ -84,10 +63,6 @@ with DAG(
         }
 
     def run_data_transformation(ti, **kwargs) -> dict:
-        """
-        Pull validation XCom → run transformation → push transformed arrays & preprocessor path.
-        """
-        # Lazy imports
         from networksecurity.entity.config_entity import TrainingPipelineConfig, DataTransformationConfig
         from networksecurity.entity.artifact_entity import DataValidationArtifact
         from networksecurity.components.data_transformation import DataTransformation
@@ -115,7 +90,6 @@ with DAG(
             "preprocessor_pkl": dt_art.transformed_object_file_path,
         }
 
-    # Define tasks (return values automatically go to XCom in Airflow 2)
     task_data_ingestion = PythonOperator(
         task_id="data_ingestion",
         python_callable=run_data_ingestion,
@@ -131,5 +105,4 @@ with DAG(
         python_callable=run_data_transformation,
     )
 
-    # Orchestration
     task_data_ingestion >> task_data_validation >> task_data_transformation
